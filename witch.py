@@ -52,7 +52,7 @@ class Witch(pygame.sprite.Sprite):
         if position == None:
             self.pos = Vector2(100, 100)  # Will eventually be the top-left offset for the entire group
         else:
-            self.pos = position
+            self.pos = Vector2(position)
         self.vel = Vector2(0, 0)
         self.acc = Vector2(0, 0)
 
@@ -62,19 +62,19 @@ class Witch(pygame.sprite.Sprite):
 
     def draw(self, surface: pygame.Surface):
         """the sooner drawn, the lower the layer"""
-        # logging.debug("Drawing at {}".format(self.pos))
-        surface.blit(self.foot_l, self.foot_l_rect.move(self.pos))
-        surface.blit(self.foot_r, self.foot_r_rect.move(self.pos))
+        h = 380
+        w = 250
+        totalSize = Rect((0, 0, w, h))
+        tmpSurface = pygame.Surface(totalSize.size).convert_alpha()
+        # pygame.draw.rect(tmpSurface, "red", totalSize, 2)
+        for i in range(len(self.sprites)):
+            tmpSurface.blit(self.sprites[i], self.rects[i])
 
-        surface.blit(self.arm_l_drawn, self.arm_l_drawn_rect.move(self.pos))
-        surface.blit(self.hair, self.hair_rect.move(self.pos))
-        surface.blit(self.shirt, self.shirt_rect.move(self.pos))
-        surface.blit(self.skirt, self.skirt_rect.move(self.pos))
+        if self.directionFacing == LEFT:
+            tmpSurface = pygame.transform.flip(tmpSurface, True, False)
 
-        surface.blit(self.head, self.head_rect.move(self.pos))
-
-        surface.blit(self.arm_r_drawn, self.arm_r_drawn_rect.move(self.pos))
-        # pygame.draw.rect(surface, (200, 200, 200), self.arm_r_drawn_rect, 2)
+        tmpSurface = pygame.transform.scale(tmpSurface, (w * screen.SCALE, h * screen.SCALE))
+        surface.blit(tmpSurface, tmpSurface.get_rect().move(self.pos))
 
     def add(self, *groups: AbstractGroup) -> None:
         super().add(*groups)
@@ -83,6 +83,9 @@ class Witch(pygame.sprite.Sprite):
         if self == screen.active_player:
             self.move()
         self.animate()
+        self.sprites = [self.foot_l, self.foot_r, self.arm_l_drawn, self.hair, self.shirt, self.skirt, self.head, self.arm_r_drawn]
+        self.rects = [self.foot_l_rect, self.foot_r_rect, self.arm_l_drawn_rect, self.hair_rect, self.shirt_rect, self.skirt_rect, self.head_rect, self.arm_r_drawn_rect]
+
 
     def move(self):
         self.acc = Vector2(0, 0)
@@ -119,10 +122,14 @@ class Witch(pygame.sprite.Sprite):
         self.foot_l_rect.move_ip(self.head_acc.rotate(-180))
         self.foot_r_rect.move_ip(self.head_acc)
 
-        if self.arm_r_acc.x <= Witch.MAX_ARM_SWING_BACK:
+        if self.arm_r_acc.x <= self.MAX_ARM_SWING_BACK:
             self.arm_r_acc.y = 1
-        elif self.arm_r_acc.x > Witch.MAX_ARM_SWING_FORTH:
+        elif self.arm_r_acc.x > self.MAX_ARM_SWING_FORTH:
             self.arm_r_acc.y = -1
+        # TODO figure out how the rotation works when facing the other direction..
+        #   it seems like it would be max - current angle
+        # if self.directionFacing == LEFT:
+        #     self.arm_r_acc.x = self.MA
         self.arm_r_acc.x += self.arm_r_acc.y
 
         angle = self.arm_r_acc.x

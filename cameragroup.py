@@ -22,7 +22,8 @@ class YSortCameraGroup(pygame.sprite.Group):
 
     def draw(self, surface: pygame.Surface):
         # self.display_surface = pygame.display.get_surface()
-        for sprite in self.sprites():
+        y_sorted_sprites = sorted(self.sprites(), key=lambda sprite: sprite.pos.y)
+        for sprite in y_sorted_sprites:
             if hasattr(sprite, "draw"):
                 sprite.draw(surface)
             else:

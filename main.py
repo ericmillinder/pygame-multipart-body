@@ -41,6 +41,10 @@ def game_loop():
             screen.active_player = wizard
         if pressed_keys[K_2]:
             screen.active_player = witch
+        if mod_keys & KMOD_SHIFT and pressed_keys[K_s] and screen.SCALE > 0.1:
+            screen.SCALE -= 0.1
+        elif pressed_keys[K_s] and screen.SCALE < 5:
+            screen.SCALE += 0.1
 
         if mod_keys & KMOD_SHIFT and pressed_keys[K_u]:
             screen.FPS += 3
