@@ -22,6 +22,7 @@ screen.active_player = wizard
 witch = Witch((300, 20))
 all_sprites.add(witch)
 
+bg = pygame.image.load("assets/images/bg_training.png")
 
 # background = pygame.image.load("assets/images/training.png").convert_alpha()
 
@@ -56,6 +57,7 @@ def game_loop():
                 screen.FPS = 3
 
         displaysurface.fill('#303030')
+        displaysurface.blit(bg, bg.get_rect())
 
         all_sprites.update()
         all_sprites.draw(displaysurface)

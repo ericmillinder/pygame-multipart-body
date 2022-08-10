@@ -67,7 +67,7 @@ while not done:
 
     process_keys()
 
-    displaysurface.fill('#303030')
+    displaysurface.fill('#30f030')
     if moving:
         i += speed
 

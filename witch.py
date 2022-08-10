@@ -20,11 +20,11 @@ class Witch(pygame.sprite.Sprite):
     MAX_ARM_SWING_BACK = -35
     MAX_ARM_SWING_FORTH = 35
 
-
     def __init__(self, position=None):
         super().__init__()
         self.sheet = SpriteSheet("assets/images/witch.png")
         self.head = self.sheet.image_at((0, 0, 237, 237))
+        self.blink = self.sheet.image_at((239, 227, 79, 37))
         self.hair = pygame.transform.rotate(self.sheet.image_at((241, 3, 90, 66)), -90)
         self.shirt = self.sheet.image_at((250, 75, 70, 55))
         self.skirt = self.sheet.image_at((3, 237, 120, 100))
@@ -37,13 +37,14 @@ class Witch(pygame.sprite.Sprite):
 
         # all rects start at 0,0
         self.head_rect = self.head.get_rect().move(10, 0)
+        self.blink_rect = self.blink.get_rect().move(108, 154)
         self.hair_rect = self.hair.get_rect().move(141, 130)
         self.shirt_rect = self.shirt.get_rect().move(110, self.head_rect.bottomleft[1] - 40)
         self.skirt_rect = self.skirt.get_rect().move(77, self.shirt_rect.bottomleft[1] - 15)
         self.foot_l_rect = self.foot_l.get_rect().move(110, self.skirt_rect.bottomleft[1] - 20)
         self.foot_r_rect = self.foot_r.get_rect().move(150, self.skirt_rect.bottomleft[1] - 27)
         self.arm_r_rect = self.arm_r.get_rect()
-        self.arm_r_rect.center = self.shirt_rect.move(10, 13).topleft
+        self.arm_r_rect.center = self.shirt_rect.move(10, 25).topleft
         self.arm_r_drawn_rect = None
         self.arm_l_rect = self.arm_l.get_rect()
         self.arm_l_rect.center = self.shirt_rect.move(30, 14).topleft
@@ -58,7 +59,11 @@ class Witch(pygame.sprite.Sprite):
 
         self.directionFacing = RIGHT
         self.head_acc = Vector2(0, 0)
-        self.arm_r_acc = Vector2(random.randint(Witch.MAX_ARM_SWING_BACK, Witch.MAX_ARM_SWING_FORTH), 1)  # current angle, rate of change
+        self.arm_r_acc = Vector2(random.randint(Witch.MAX_ARM_SWING_BACK, Witch.MAX_ARM_SWING_FORTH),
+                                 1)  # current angle, rate of change
+
+        self.sinceLastBlink = 0
+        self.blinking = False
 
     def draw(self, surface: pygame.Surface):
         """the sooner drawn, the lower the layer"""
@@ -69,6 +74,8 @@ class Witch(pygame.sprite.Sprite):
         # pygame.draw.rect(tmpSurface, "red", totalSize, 2)
         for i in range(len(self.sprites)):
             tmpSurface.blit(self.sprites[i], self.rects[i])
+        if self.blinking:
+            tmpSurface.blit(self.blink, self.blink_rect)
 
         if self.directionFacing == LEFT:
             tmpSurface = pygame.transform.flip(tmpSurface, True, False)
@@ -80,12 +87,14 @@ class Witch(pygame.sprite.Sprite):
         super().add(*groups)
 
     def update(self):
+        self.sinceLastBlink += 1
         if self == screen.active_player:
             self.move()
         self.animate()
-        self.sprites = [self.foot_l, self.foot_r, self.arm_l_drawn, self.hair, self.shirt, self.skirt, self.head, self.arm_r_drawn]
-        self.rects = [self.foot_l_rect, self.foot_r_rect, self.arm_l_drawn_rect, self.hair_rect, self.shirt_rect, self.skirt_rect, self.head_rect, self.arm_r_drawn_rect]
-
+        self.sprites = [self.foot_l, self.foot_r, self.arm_l_drawn, self.hair, self.shirt, self.skirt, self.head,
+                        self.arm_r_drawn]
+        self.rects = [self.foot_l_rect, self.foot_r_rect, self.arm_l_drawn_rect, self.hair_rect, self.shirt_rect,
+                      self.skirt_rect, self.head_rect, self.arm_r_drawn_rect]
 
     def move(self):
         self.acc = Vector2(0, 0)
@@ -118,6 +127,7 @@ class Witch(pygame.sprite.Sprite):
         elif self.head_rect.top <= 0:
             self.head_acc = Vector2(0, 1)
         self.head_rect.move_ip(self.head_acc)
+        self.blink_rect.move_ip(self.head_acc)
         self.hair_rect.move_ip(self.head_acc)
         self.foot_l_rect.move_ip(self.head_acc.rotate(-180))
         self.foot_r_rect.move_ip(self.head_acc)
@@ -134,7 +144,7 @@ class Witch(pygame.sprite.Sprite):
 
         angle = self.arm_r_acc.x
         pivot = self.arm_r_rect.center
-        offset = Vector2(-10, self.arm_r_rect.height / 2)
+        offset = Vector2(-10, 40)
         # logging.info("Rotating arm at {} by {}, {}, {}".format((self.arm_r_rect), angle, pivot, offset))
         self.arm_r_drawn, self.arm_r_drawn_rect = self.rotate(self.arm_r, angle, pivot, offset)
         # self.arm_r_rect = self.arm_r.get_bounding_rect()
@@ -142,7 +152,11 @@ class Witch(pygame.sprite.Sprite):
         self.arm_l_drawn, self.arm_l_drawn_rect = \
             self.rotate(self.arm_l, -angle, self.arm_l_rect.center, Vector2(0, self.arm_l_rect.height / 2))
 
-        # self.head_rect.move_ip()
+        if self.sinceLastBlink > 300:
+            self.blinking = True
+        if self.sinceLastBlink > 360:
+            self.sinceLastBlink = 0
+            self.blinking = False
 
     def rotate(self, surface, angle, pivot, offset: Vector2):
         """Rotate the surface around the pivot point.

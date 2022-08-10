@@ -1,3 +1,4 @@
+import random
 from typing import Any
 
 from pygame.locals import *
@@ -16,8 +17,10 @@ LEFT = 1
 
 
 class Wizard(pygame.sprite.Sprite):
-    MAX_ARM_SWING_BACK = -35
-    MAX_ARM_SWING_FORTH = 35
+    MAX_ARM_SWING_BACK = -65
+    MAX_ARM_SWING_FORTH = 65
+    BLINK_RATE = 240  # 240 / 60 fps ~ blink every 4 seconds?
+    BLINK_DURATION = 40
 
     def __init__(self, position=None):
         super().__init__()
@@ -34,16 +37,16 @@ class Wizard(pygame.sprite.Sprite):
         self.arm_l = pygame.transform.rotate(self.sheet.image_at((60, 440, 93, 68)), -90)
         self.arm_l_drawn = None
 
-        self.head_rect = self.head.get_rect().move(32, 20)
-        self.blink_rect = self.blink.get_rect().move(94, 130)
+        self.head_rect = self.head.get_rect().move(38, 20)
+        self.blink_rect = self.blink.get_rect().move(100, 130)
         self.hat_point_rect = self.hat_point.get_rect().move(-5, 35)
         self.hair_rect = self.body.get_rect().move(53, 160)
         self.body_rect = self.body.get_rect().move(30, 190)
         self.foot_l_rect = self.foot_l.get_rect().move(60, 305)
         self.foot_r_rect = self.foot_r.get_rect().move(110, 309)
-        self.arm_r_rect = self.arm_r.get_rect().move(35, 135)
+        self.arm_r_rect = self.arm_r.get_rect().move(34, 150)
         self.arm_r_drawn_rect = None
-        self.arm_l_rect = self.arm_l.get_rect().move(60, 155)
+        self.arm_l_rect = self.arm_l.get_rect().move(85, 165)
         self.arm_l_drawn_rect = None
 
         if position == None:
@@ -54,20 +57,23 @@ class Wizard(pygame.sprite.Sprite):
         self.vel = Vector2(0, 0)
         self.acc = Vector2(0, 0)
 
+        self.sinceLastBlink = random.randint(0, Wizard.BLINK_RATE)
+        self.blinking = False
+
         self.directionFacing = RIGHT
         self.head_acc = Vector2(0, 0)
         self.arm_r_acc = Vector2(0, 1)  # current angle, rate of change
 
-        self.weapon = WoodenWizardStaff()
-        self.weapon.rect.move_ip(0, -15)
-
+        self.weapon = RedWizardStaff()
+        self.weapon.rotate(-90)
+        # self.weapon.rect.move_ip(-150, -25)
+        self.weapon_drawn_rect = None
+        self.weapon_drawn = None
 
     def draw(self, surface: pygame.Surface):
-        """Attempting to draw all the parts here as an alternative to this being a Group
-        or having to have image and rect attributes
-        """
+        """Moved on to bliting to a temp surface for left, right facing"""
         # logging.debug("Drawing at {}".format(self.pos))
-        w = 192
+        w = 300
         h = 372
         totalSize = Rect((0, 0, w, h))
         tmpSurface = pygame.Surface(totalSize.size).convert_alpha()
@@ -75,34 +81,49 @@ class Wizard(pygame.sprite.Sprite):
         tmpSurface.blit(self.foot_l, self.foot_l_rect)
         tmpSurface.blit(self.foot_r, self.foot_r_rect)
 
-        hand = Vector2(self.arm_l_drawn_rect.bottomright)
-        hand.y -= -5
-        hand.x -= -5
-
-        surface.blit(self.weapon_drawn, self.weapon_drawn_rect.move(hand))
-        tmpSurface.blit(self.arm_l_drawn, self.arm_l_drawn_rect)
-        # pygame.draw.rect(tmpSurface, (200, 200, 200), totalSize, 1)
-
-        tmpSurface.blit(self.hair, self.hair_rect)
-        tmpSurface.blit(self.body, self.body_rect)
-
         tmpSurface.blit(self.hat_point, self.hat_point_rect)
-        tmpSurface.blit(self.head, self.head_rect)
-        tmpSurface.blit(self.blink, self.blink_rect)
-        #
-        tmpSurface.blit(self.arm_r_drawn, self.arm_r_drawn_rect)
+        pygame.draw.circle(tmpSurface, "green", self.arm_l_rect.center, 3)
+        pygame.draw.circle(tmpSurface, "blue", self.weapon_drawn_rect.center, 3)
+        pygame.draw.rect(tmpSurface, (200, 200, 200), totalSize, 1)
 
+        if self.directionFacing == RIGHT:
+            # Needs arm/shoulder offsets
+            tmpSurface.blit(self.weapon_drawn, self.weapon_drawn_rect)
+            tmpSurface.blit(self.arm_l_drawn, self.arm_l_drawn_rect)
+            tmpSurface.blit(self.hair, self.hair_rect)
+            tmpSurface.blit(self.body, self.body_rect)
+
+            tmpSurface.blit(self.head, self.head_rect)
+            tmpSurface.blit(self.arm_r_drawn, self.arm_r_drawn_rect)
+            pygame.draw.circle(tmpSurface, "green", self.arm_r_rect.center, 3)
+            pygame.draw.circle(tmpSurface, "blue", self.arm_r_drawn_rect.center, 3)
+        else:
+            tmpSurface.blit(self.arm_r_drawn, self.arm_r_drawn_rect)
+            pygame.draw.circle(tmpSurface, "green", self.arm_r_rect.center, 3)
+            pygame.draw.circle(tmpSurface, "blue", self.arm_r_drawn_rect.center, 3)
+            tmpSurface.blit(self.hair, self.hair_rect)
+            tmpSurface.blit(self.body, self.body_rect)
+            tmpSurface.blit(self.head, self.head_rect)
+            tmpSurface.blit(self.arm_l_drawn, self.arm_l_drawn_rect)
+            pygame.draw.circle(tmpSurface, "green", self.arm_l_rect.center, 3)
+            pygame.draw.circle(tmpSurface, "blue", self.arm_l_drawn_rect.center, 3)
+            tmpSurface.blit(self.weapon_drawn, self.weapon_drawn_rect)
+
+        if self.blinking:
+            tmpSurface.blit(self.blink, self.blink_rect)
 
         if self.directionFacing == LEFT:
             tmpSurface = pygame.transform.flip(tmpSurface, True, False)
 
         tmpSurface = pygame.transform.scale(tmpSurface, (w * screen.SCALE, h * screen.SCALE))
         surface.blit(tmpSurface, tmpSurface.get_rect().move(self.pos))
+        surface.scroll()
 
     def add(self, *groups: AbstractGroup) -> None:
         super().add(*groups)
 
     def update(self):
+        self.sinceLastBlink += 1
         if self == screen.active_player:
             self.move()
         self.animate()
@@ -152,18 +173,20 @@ class Wizard(pygame.sprite.Sprite):
         self.arm_r_acc.x += self.arm_r_acc.y
 
         angle = self.arm_r_acc.x
-        pivot = self.arm_r_rect.center
-        offset = Vector2(0, self.arm_r_rect.height / 2)
-        # logging.info("Rotating arm at {} by {}, {}, {}".format((self.arm_r_rect), angle, pivot, offset))
-        self.arm_r_drawn, self.arm_r_drawn_rect = self.rotate(self.arm_r, angle, pivot, offset)
-        # self.arm_r_rect = self.arm_r.get_bounding_rect()
+        self.arm_r_drawn, self.arm_r_drawn_rect = \
+            self.rotate(self.arm_r, angle, self.arm_r_rect.center, Vector2(-10, 50))
 
         self.arm_l_drawn, self.arm_l_drawn_rect = \
-            self.rotate(self.arm_l, -angle, self.arm_l_rect.center, Vector2(0, self.arm_l_rect.height / 2))
-        self.weapon_drawn, self.weapon_drawn_rect = \
-            self.rotate(self.weapon.image, -angle, self.weapon.rect.center, Vector2(self.arm_l_rect.width / 2, -self.arm_l_rect.height / 2))
+            self.rotate(self.arm_l, -35-angle, self.arm_l_rect.center, Vector2(-20, 40))
 
-        # self.head_rect.move_ip()
+        self.weapon_drawn, self.weapon_drawn_rect = \
+            self.rotate(self.weapon.image, -35-angle, self.arm_l_rect.center, Vector2(35, 85))
+
+        if self.sinceLastBlink > self.BLINK_RATE:
+            self.blinking = True
+        if self.sinceLastBlink > self.BLINK_RATE + self.BLINK_DURATION:
+            self.blinking = False
+            self.sinceLastBlink = 0
 
     def rotate(self, surface, angle, pivot, offset: Vector2):
         """Rotate the surface around the pivot point.
@@ -187,6 +210,7 @@ class WizardStaff:
         sheet = SpriteSheet("assets/images/wizard.png")
         self.wood = sheet.image_at((10, 241, 70, 265))
 
+
 class WoodenWizardStaff(pygame.sprite.Sprite):
 
     def __init__(self, position=None):
@@ -196,3 +220,14 @@ class WoodenWizardStaff(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
 
+class RedWizardStaff(pygame.sprite.Sprite):
+
+    def __init__(self, position=None):
+        super().__init__()
+        sheet = SpriteSheet("assets/images/staff_wizard.png")
+        self.image = sheet.image_at((305, 215, 100, 295))
+        self.rect = self.image.get_rect()
+
+    def rotate(self, angle):
+        self.image = pygame.transform.rotate(self.image, angle)
+        self.rect = self.image.get_rect()
