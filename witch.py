@@ -19,6 +19,8 @@ LEFT = 1
 class Witch(pygame.sprite.Sprite):
     MAX_ARM_SWING_BACK = -35
     MAX_ARM_SWING_FORTH = 35
+    BLINK_RATE = 195  # 240 / 60 fps ~ blink every 4 seconds?
+    BLINK_DURATION = 30
 
     def __init__(self, position=None):
         super().__init__()
@@ -152,11 +154,13 @@ class Witch(pygame.sprite.Sprite):
         self.arm_l_drawn, self.arm_l_drawn_rect = \
             self.rotate(self.arm_l, -angle, self.arm_l_rect.center, Vector2(0, self.arm_l_rect.height / 2))
 
-        if self.sinceLastBlink > 300:
+        if self.sinceLastBlink > self.BLINK_RATE:
             self.blinking = True
-        if self.sinceLastBlink > 360:
-            self.sinceLastBlink = 0
+        if self.sinceLastBlink > self.BLINK_RATE + self.BLINK_DURATION:
             self.blinking = False
+            self.sinceLastBlink = 0
+            self.BLINK_RATE = random.randint(150, 200)
+            self.BLINK_DURATION = random.randint(15, 20)
 
     def rotate(self, surface, angle, pivot, offset: Vector2):
         """Rotate the surface around the pivot point.

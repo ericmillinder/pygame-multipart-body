@@ -2,6 +2,7 @@ from pygame.locals import *
 
 import cameragroup
 import screen
+import text
 from screen import *
 from wizard import *
 from witch import *
@@ -25,10 +26,17 @@ all_sprites.add(witch)
 bg = pygame.image.load("assets/images/bg_training.png")
 
 # background = pygame.image.load("assets/images/training.png").convert_alpha()
+pygame.font.init()
+# title_font = pygame.font.SysFont('Cochin', 64, False, False)
+# title = title_font.render("Wizards & Witches", True, "darkgray")
 
+title = text.Text("Wizards & Witches", "Cochin", "darkgray", 64, ((WIDTH / 2), (HEIGHT) / 2))
+title.fadeDown(280, 1)
 
 def game_loop():
+    global title
     done = False
+    since_start = 0
     while not done:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -61,6 +69,14 @@ def game_loop():
 
         all_sprites.update()
         all_sprites.draw(displaysurface)
+
+        if title:
+            title.update()
+            displaysurface.blit(title.image, title.rect)
+            if title.isDead():
+                title = None
+                logging.info("Title is now dead.")
+
 
         pygame.display.update()
         FramePerSec.tick(screen.FPS)
