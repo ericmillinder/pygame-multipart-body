@@ -23,6 +23,9 @@ class Wizard(pygame.sprite.Sprite):
     BLINK_RATE = 240  # 240 / 60 fps ~ blink every 4 seconds?
     BLINK_DURATION = 40
 
+    w = 350
+    h = 372
+
     def __init__(self, position=None):
         super().__init__()
         self.sheet = SpriteSheet("assets/images/wizard.png")
@@ -48,7 +51,7 @@ class Wizard(pygame.sprite.Sprite):
         self.foot_r_rect = self.foot_r.get_rect().move(113 + leftPadding, 290)
         self.arm_r_rect = self.arm_r.get_rect().move(74 + leftPadding, 150)
         self.arm_r_drawn_rect = None
-        self.arm_l_rect = self.arm_l.get_rect().move(95 + leftPadding, 165)
+        self.arm_l_rect = self.arm_l.get_rect().move(90 + leftPadding, 165)
         self.arm_l_drawn_rect = None
 
         if position == None:
@@ -64,7 +67,7 @@ class Wizard(pygame.sprite.Sprite):
 
         self.directionFacing = RIGHT
         self.head_acc = Vector2(0, 0)
-        self.arm_r_acc = Vector2(0, 1)  # current angle, rate of change
+        self.arm_r_acc = Vector2(0, 2)  # current angle, rate of change
 
         self.weapons = [WoodenWizardStaff(-90), RedWizardStaff(-90)]
         self.weapon = self.weapons[0]
@@ -77,17 +80,14 @@ class Wizard(pygame.sprite.Sprite):
     def draw(self, surface: pygame.Surface):
         """Moved on to bliting to a temp surface for left, right facing"""
         # logging.debug("Drawing at {}".format(self.pos))
-        w = 350
-        h = 372
-        totalSize = Rect((0, 0, w, h))
+        totalSize = Rect((0, 0, self.w, self.h))
         tmpSurface = pygame.Surface(totalSize.size).convert_alpha()
 
         tmpSurface.blit(self.hat_point, self.hat_point_rect)
         pygame.draw.circle(tmpSurface, "green", self.arm_l_rect.center, 3)
         pygame.draw.circle(tmpSurface, "blue", self.weapon_drawn_rect.center, 3)
-        pygame.draw.rect(tmpSurface, (200, 200, 200), totalSize, 1)
+        # pygame.draw.rect(tmpSurface, (200, 200, 200), totalSize, 1)
 
-        arm_offset = pygame.math.Vector2(35, 0)
         if self.directionFacing == RIGHT:
 
             tmpSurface.blit(self.weapon_drawn, self.weapon_drawn_rect)
@@ -106,15 +106,13 @@ class Wizard(pygame.sprite.Sprite):
             tmpSurface.blit(self.foot_l, self.foot_l_rect)
             tmpSurface.blit(self.foot_r, self.foot_r_rect)
             tmpSurface.blit(self.arm_r_drawn, self.arm_r_drawn_rect)
-            pygame.draw.circle(tmpSurface, "green", self.arm_r_rect.center, 3)
-            pygame.draw.circle(tmpSurface, "blue", self.arm_r_drawn_rect.center, 3)
             tmpSurface.blit(self.hair, self.hair_rect)
             tmpSurface.blit(self.body, self.body_rect)
             tmpSurface.blit(self.head, self.head_rect)
-            tmpSurface.blit(self.arm_l_drawn, self.arm_l_drawn_rect.move(-arm_offset))
+            tmpSurface.blit(self.weapon_drawn, self.weapon_drawn_rect)
+            tmpSurface.blit(self.arm_l_drawn, self.arm_l_drawn_rect)
             pygame.draw.circle(tmpSurface, "green", self.arm_l_rect.center, 3)
             pygame.draw.circle(tmpSurface, "blue", self.arm_l_drawn_rect.center, 3)
-            tmpSurface.blit(self.weapon_drawn, self.weapon_drawn_rect)
 
         if self.blinking:
             tmpSurface.blit(self.blink, self.blink_rect)
@@ -122,7 +120,7 @@ class Wizard(pygame.sprite.Sprite):
         if self.directionFacing == LEFT:
             tmpSurface = pygame.transform.flip(tmpSurface, True, False)
 
-        tmpSurface = pygame.transform.scale(tmpSurface, (w * screen.SCALE, h * screen.SCALE))
+        tmpSurface = pygame.transform.scale(tmpSurface, (self.w * screen.SCALE, self.h * screen.SCALE))
         surface.blit(tmpSurface, tmpSurface.get_rect().move(self.pos))
         surface.scroll()
 
@@ -162,8 +160,8 @@ class Wizard(pygame.sprite.Sprite):
 
         if self.pos.x > screen.WIDTH:
             self.pos.x = screen.WIDTH
-        if self.pos.x < 0:
-            self.pos.x = 0
+        if self.pos.x < -self.w:
+            self.pos.x = -self.w
 
     def animate(self):
         if self.head_rect.top >= 33:
@@ -179,18 +177,18 @@ class Wizard(pygame.sprite.Sprite):
         self.foot_r_rect.move_ip(self.head_acc)
 
         if self.arm_r_acc.x <= self.MAX_ARM_SWING_BACK:
-            self.arm_r_acc.y = 1
+            self.arm_r_acc.y = 2
         elif self.arm_r_acc.x > self.MAX_ARM_SWING_FORTH:
-            self.arm_r_acc.y = -1
+            self.arm_r_acc.y = -2
         self.arm_r_acc.x += self.arm_r_acc.y
 
-        shoulder_offset = pygame.math.Vector2(20, 0)
+        shoulder_offset = pygame.math.Vector2(-29, 0)
 
-        if self.directionFacing == LEFT:
+        if self.directionFacing == RIGHT:
             offset_arm_r = self.arm_r_rect.move(shoulder_offset)
             offset_arm_l = self.arm_l_rect.move(-shoulder_offset)
         else:
-            offset_arm_r = self.arm_r_rect.move(-shoulder_offset)
+            offset_arm_r = self.arm_r_rect.move(shoulder_offset)
             offset_arm_l = self.arm_l_rect.move(shoulder_offset)
 
 

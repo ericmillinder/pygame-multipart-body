@@ -20,7 +20,7 @@ wizard = Wizard()
 all_sprites.add(wizard)
 screen.active_player = wizard
 
-witch = Witch((300, 20))
+witch = Witch((450, 80))
 all_sprites.add(witch)
 
 bg = pygame.image.load("assets/images/bg_training.png")

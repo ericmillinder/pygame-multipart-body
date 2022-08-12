@@ -53,13 +53,13 @@ class Witch(pygame.sprite.Sprite):
         self.arm_l_drawn_rect = None
 
         if position == None:
-            self.pos = Vector2(100, 100)  # Will eventually be the top-left offset for the entire group
+            self.pos = Vector2(600, 150)  # Will eventually be the top-left offset for the entire group
         else:
             self.pos = Vector2(position)
         self.vel = Vector2(0, 0)
         self.acc = Vector2(0, 0)
 
-        self.directionFacing = RIGHT
+        self.directionFacing = LEFT
         self.head_acc = Vector2(0, 0)
         self.arm_r_acc = Vector2(random.randint(Witch.MAX_ARM_SWING_BACK, Witch.MAX_ARM_SWING_FORTH),
                                  1)  # current angle, rate of change
